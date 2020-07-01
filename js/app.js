@@ -2,12 +2,10 @@
 const gallery = document.querySelector(".gallery")
 const searchContainer = document.querySelector(".search-container")
 let users = [];
-let originalData = "";
 
 //fetch Request
 fetch('https://randomuser.me/api/?results=12')
   .then(res => res.json())
-  .then(data => originalData = data)
   .then(data => generateMarkup(data))
 
 //Markup Generate Function(s)
@@ -34,7 +32,8 @@ function addToGallery(markup){
 function generateMarkup(data){
   users = [];
   data.results.map((user) =>{
-
+    let userPhone = phoneRegEx(user.phone);
+    console.log(userPhone)
     let userData = new Object();
     userData.card =
         `<div class="card" id=${data.results.indexOf(user)}>
@@ -57,7 +56,7 @@ function generateMarkup(data){
                    <p class="modal-text">${user.email}</p>
                    <p class="modal-text cap">${user.location.city}</p>
                    <hr>
-                   <p class="modal-text">${user.phone}</p>
+                   <p class="modal-text"> (${userPhone.slice(0,3)}) ${userPhone.slice(3,6)}-${userPhone.slice(6,10)}</p>
                    <p class="modal-text">${user.location.street.number} ${user.location.street.name}, ${user.location.city}, ${user.location.state} ${user.location.postcode}</p>
                    <p class="modal-text">Birthday: ${user.dob.date.slice(5,7)}/${user.dob.date.slice(8,10)}/${user.dob.date.slice(0,4)}</p>
                </div>
@@ -81,11 +80,22 @@ function generateMarkup(data){
 //Card click event listener
 function cardClick() {
   let cards = document.querySelectorAll('.card');
+  let modal = document.querySelector('.modal-container');
     cards.forEach(card => card.addEventListener('click', () =>{
       addToGallery(users[card.id].modal)
-      toggleModalDown();
-      toggleModalUp();
-      removeModal();
+      if(card.id === 0){
+        toggleModalUp();
+        removeModal();
+        document.querySelector("#modal-prev").remove();
+      } else if(card.id === 11){
+        toggleModalDown();
+        removeModal();
+        document.querySelector("#modal-next").remove();
+      } else {
+        toggleModalUp();
+        toggleModalDown();
+        removeModal()
+      }
     }))
   }
 
@@ -104,37 +114,39 @@ function toggleModalDown(){
   const modal = document.querySelector('.modal-container');
   let modalIndex = parseInt(modal.id);
   const prev = document.querySelector('#modal-prev')
-  const next = document.querySelector('#modal-next')
+  if(modalIndex === 0){
+    prev.remove();
+  }
 
   prev.addEventListener('click', () => {
     modal.remove();
-    console.log(modalIndex)
     modalIndex = modalIndex-1;
-    console.log(modalIndex)
-    addToGallery(users[modalIndex].modal)
+    addToGallery(users[modalIndex].modal);
     removeModal()
     toggleModalUp();
     toggleModalDown();
+
   })
 }
 
 function toggleModalUp(){
   const modal = document.querySelector('.modal-container');
   let modalIndex = parseInt(modal.id);
-  const prev = document.querySelector('#modal-prev')
   const next = document.querySelector('#modal-next')
+  if(modalIndex === 11){
+    next.remove();
+  }
 
   next.addEventListener('click', () => {
     modal.remove();
-    console.log(modalIndex)
     modalIndex = modalIndex+1;
-    console.log(modalIndex)
     addToGallery(users[modalIndex].modal)
     removeModal()
     toggleModalDown()
     toggleModalUp();
   })
 }
+
 
 //Search bar keyup event listeners, displays cards to fit the search critera on submit
 function searchCards(data){
@@ -163,4 +175,12 @@ function resetButton(){
     gallery.innerHTML = '';
     generateMarkup(originalData);
   })
+}
+
+
+//User phone regex
+
+function phoneRegEx(user){
+  const pattern = /[$-/:-?{-~!"^_`\[\]\s+]/ig;
+  return user.replace(pattern, '');
 }
